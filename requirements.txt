@@ -43,3 +43,14 @@ google-api-python-client>=2.125
 # Util
 tqdm>=4.66
 pyyaml>=6.0
+
+# Jarvis features
+psutil>=5.9
+nvidia-ml-py>=12.0
+pyperclip>=1.8
+mss>=9.0
+Pillow>=10.0
+plyer>=2.1
+feedparser>=6.0
+youtube-transcript-api>=0.6
+selectolax>=0.3

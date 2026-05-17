@@ -59,6 +59,37 @@ Every single response is scored on five axes **before it reaches you.** If equit
 | **04 · Calendar** | Today's events from Google Calendar · week-view grid |
 | **05 · Evaluation** | Full audit history from SQLite · sparkline trends · CSV export |
 | **06 · Papers** | RAG corpus · BGE-M3 chunk counts · PDF upload + real-time indexing |
+| **07 · Daily** | Weather · system stats · timers · clipboard · persistent memory |
+| **08 · Knowledge** | Web · arXiv · Wikipedia · YouTube summarizer · RSS · Python runner |
+| **09 · Power** | App launcher · screenshot+LLaVA · GitHub · Obsidian RAG · flashcards (SM-2) |
+| **10 · Settings** | Effective config + persisted overrides · per-key edit · restart hints |
+
+## Jarvis tool layer
+
+ARIA is voice-driven and tool-routed. Every feature below is both a clickable card and a voice phrase:
+
+| Voice phrase | Tool | Notes |
+|---|---|---|
+| *"ARIA, weather in Pune"* | `weather` | wttr.in, no API key |
+| *"ARIA, system stats"* | `system_stats` | psutil + pynvml live |
+| *"ARIA, set a 25 minute pomodoro"* | `timer` | toast + native notification on expiry |
+| *"ARIA, summarize my clipboard"* | `clipboard_summarize` | opt-in via Settings → Jarvis |
+| *"ARIA, remember my favourite city is Pune"* | `memory.patch` | JSON sidecar, persists across restart |
+| *"ARIA, search the web for X"* | `web_search` | DuckDuckGo HTML scrape |
+| *"ARIA, find papers on X"* | `arxiv_search` | Free Atom API |
+| *"ARIA, look up X on Wikipedia"* | `wikipedia` | REST summary endpoint |
+| *"ARIA, summarize this YouTube video"* | `youtube_summarize` | transcript → LLM, audit-instrumented |
+| *"ARIA, what is new on arXiv today"* | `rss_items` | Background poller, notifications on new items |
+| *(REPL card)* | `run_code` | Subprocess Python, 8-second timeout |
+| *"ARIA, open VS Code"* | `open_app` | Allowlisted app/file/URL launcher |
+| *"ARIA, what is on my screen"* | `screenshot_vision` | `mss` + Ollama `llava:7b` |
+| *"ARIA, list PRs on aria-audit"* | `github` | Read-only `gh` CLI, repo allowlist |
+| *(Power → Obsidian)* | `index_vault` | Indexes a Markdown vault into existing Qdrant |
+| *"ARIA, make flashcards from CPFE paper"* | `study_generate` | SM-2 spaced repetition, audit-instrumented |
+
+**Trigger model:** every voice query is matched against `core/jarvis/voice_router.py` patterns first. On match, the tool runs (sub-second for most). On miss, falls through to standard LLM chat with full audit envelope.
+
+**Notifications:** unified `/ws/wake` channel pushes `{type:'wake'|'notification'}` events. The header bell badge shows unread count; bottom-right toast stack auto-dismisses after 6 s; native OS notifications fire via `plyer`.
 
 ---
 

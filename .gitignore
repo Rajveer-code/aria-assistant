@@ -45,3 +45,10 @@ frontend/.next/
 
 # Claude
 .claude/
+
+# Jarvis local state
+data/memory.json
+data/overrides.json
+data/rss.json
+data/notifications.sqlite
+data/flashcards.sqlite

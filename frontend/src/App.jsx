@@ -9,6 +9,13 @@ import { PageEmail } from './components/PageEmail.jsx';
 import { PageCalendar } from './components/PageCalendar.jsx';
 import { PageEval } from './components/PageEval.jsx';
 import { PagePapers } from './components/PagePapers.jsx';
+import { PageUtilities } from './components/PageUtilities.jsx';
+import { PageKnowledge } from './components/PageKnowledge.jsx';
+import { PagePower } from './components/PagePower.jsx';
+import { PageSettings } from './components/PageSettings.jsx';
+import { ToastStack } from './components/Toast.jsx';
+import { NotificationBell } from './components/NotificationBell.jsx';
+import { useNotifications } from './hooks/useNotifications.js';
 import { getHealth, getRecentAudits } from './api.js';
 
 // ==================== Mock / Default Data ====================
@@ -84,12 +91,16 @@ const SEED_CHAT = [
 
 // ==================== Nav config ====================
 const NAV_PAGES = {
-  audit:    { eyebrow: 'Dashboard',  name: '5-Axis Audit',      Ico: Icon.Audit },
-  chat:     { eyebrow: 'Workspace',  name: 'Conversation',      Ico: Icon.Chat },
-  email:    { eyebrow: 'Workspace',  name: 'Inbox',             Ico: Icon.Mail },
-  calendar: { eyebrow: 'Workspace',  name: 'Calendar',          Ico: Icon.Calendar },
-  eval:     { eyebrow: 'Evaluation', name: 'Benchmark History', Ico: Icon.Chart },
-  papers:   { eyebrow: 'Corpus',     name: 'Paper Library',     Ico: Icon.Paper },
+  audit:     { eyebrow: 'Dashboard',  name: '5-Axis Audit',      Ico: Icon.Audit },
+  chat:      { eyebrow: 'Workspace',  name: 'Conversation',      Ico: Icon.Chat },
+  email:     { eyebrow: 'Workspace',  name: 'Inbox',             Ico: Icon.Mail },
+  calendar:  { eyebrow: 'Workspace',  name: 'Calendar',          Ico: Icon.Calendar },
+  eval:      { eyebrow: 'Evaluation', name: 'Benchmark History', Ico: Icon.Chart },
+  papers:    { eyebrow: 'Corpus',     name: 'Paper Library',     Ico: Icon.Paper },
+  utilities: { eyebrow: 'Utilities',  name: 'Daily tools',        Ico: Icon.Toolbox },
+  knowledge: { eyebrow: 'Utilities',  name: 'Knowledge tools',    Ico: Icon.Search },
+  power:     { eyebrow: 'Utilities',  name: 'Power tools',        Ico: Icon.Wrench },
+  settings:  { eyebrow: 'System',     name: 'Settings',           Ico: Icon.Settings },
 };
 
 // ==================== useHealth hook ====================
@@ -140,7 +151,7 @@ function envelopeToScores(env) {
 }
 
 // ==================== Header ====================
-function Header({ active, health }) {
+function Header({ active, health, notifications, unread, onBellOpen }) {
   const meta = NAV_PAGES[active];
   const model = health?.model || 'qwen3 : 8b · q4_K_M';
   const vramStr = health?.vram_used_gb != null
@@ -164,6 +175,7 @@ function Header({ active, health }) {
           <span><span className="k">Backend</span> <span className="v-cy" style={{ color: online ? undefined : 'var(--danger)' }}>{online ? 'online' : 'offline'}</span></span>
         </div>
         <div className="header-badges">
+          <NotificationBell items={notifications} unread={unread} onOpen={onBellOpen} />
           <span className={`pill ${online ? 'pill-accent' : 'pill-flag'}`}>
             <span className="dot" />{online ? 'Ollama online' : 'Ollama offline'}
           </span>
@@ -183,9 +195,14 @@ function Sidebar({ active, setActive, chatTurns }) {
     { key: 'email',    label: 'Inbox',        kbd: '3' },
     { key: 'calendar', label: 'Calendar',     kbd: '4' },
   ];
-  const tools = [
+  const research = [
     { key: 'eval',   label: 'Evaluation', kbd: '5' },
     { key: 'papers', label: 'Papers',     kbd: '6' },
+  ];
+  const utilities = [
+    { key: 'utilities', label: 'Daily',     kbd: '7' },
+    { key: 'knowledge', label: 'Knowledge', kbd: '8' },
+    { key: 'power',     label: 'Power',     kbd: '9' },
   ];
   const renderItem = (it) => {
     const Ico = NAV_PAGES[it.key].Ico;
@@ -215,11 +232,17 @@ function Sidebar({ active, setActive, chatTurns }) {
       <div className="sidebar-section">Workspace</div>
       {nav.map(renderItem)}
       <div className="sidebar-section">Research</div>
-      {tools.map(renderItem)}
+      {research.map(renderItem)}
+      <div className="sidebar-section">Utilities</div>
+      {utilities.map(renderItem)}
       <div className="mt-auto">
-        <div className="sidebar-item" style={{ marginTop: 12 }}>
+        <div
+          className={`sidebar-item ${active === 'settings' ? 'active' : ''}`}
+          style={{ marginTop: 12 }}
+          onClick={() => setActive('settings')}>
           <span className="sidebar-icon"><Icon.Settings /></span>
           <span className="sidebar-label">Settings</span>
+          <span className="sidebar-kbd">0</span>
         </div>
       </div>
     </aside>
@@ -516,9 +539,14 @@ export default function App() {
 
   const driftSeries = React.useMemo(() => makeDriftSeries(), []);
 
-  // Keyboard shortcuts 1–6
+  // Keyboard shortcuts 1–9 + 0
   React.useEffect(() => {
-    const keys = { '1': 'audit', '2': 'chat', '3': 'email', '4': 'calendar', '5': 'eval', '6': 'papers' };
+    const keys = {
+      '1': 'audit', '2': 'chat', '3': 'email', '4': 'calendar',
+      '5': 'eval', '6': 'papers',
+      '7': 'utilities', '8': 'knowledge', '9': 'power',
+      '0': 'settings',
+    };
     const onKey = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       const k = keys[e.key];
@@ -527,6 +555,11 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // Notifications: subscribes to /ws/wake, filters out wake messages (those go to voice hook).
+  // Wake events still trigger the voice orb because Assistant.jsx has its own WS connection.
+  const { items: notifItems, unread: notifUnread, markAllRead, dismiss: dismissToast } =
+    useNotifications();
 
   const lastMsgId = chatMessages[chatMessages.length - 1]?.id;
   const streamingId = (scenario === 'audit-complete' || scenario === 'flagged') ? lastMsgId : null;
@@ -537,7 +570,13 @@ export default function App() {
       <div className="aria-root">
         <Sidebar active={active} setActive={setActive} chatTurns={Math.floor(pageChatMessages.length / 2)} />
         <div className="main-grid">
-          <Header active={active} health={health} />
+          <Header
+            active={active}
+            health={health}
+            notifications={notifItems}
+            unread={notifUnread}
+            onBellOpen={markAllRead}
+          />
           <div className="page-frame">
             {active === 'audit' && (
               <PageAudit
@@ -565,13 +604,18 @@ export default function App() {
             />}
             {active === 'email'    && <PageEmail />}
             {active === 'calendar' && <PageCalendar />}
-            {active === 'eval'     && <PageEval />}
-            {active === 'papers'   && <PagePapers />}
+            {active === 'eval'      && <PageEval />}
+            {active === 'papers'    && <PagePapers />}
+            {active === 'utilities' && <PageUtilities />}
+            {active === 'knowledge' && <PageKnowledge />}
+            {active === 'power'     && <PagePower />}
+            {active === 'settings'  && <PageSettings />}
           </div>
         </div>
       </div>
       {active === 'audit' && scenario === 'flagged'  && <FairnessAlert />}
       {active === 'audit' && scenario === 'briefing' && <MorningBriefing onClose={() => setScenario('audit-complete')} />}
+      <ToastStack items={notifItems} onDismiss={dismissToast} />
     </>
   );
 }

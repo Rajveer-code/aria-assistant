@@ -54,9 +54,11 @@ _llm: "OllamaPrimary | None" = None   # type: ignore[name-defined]
 _gmail: object = None
 _calendar: object = None
 
-# Wake-event pipeline: producer thread → WAKE_QUEUE → broadcast task → per-client queues
-WAKE_QUEUE: asyncio.Queue = asyncio.Queue()
-_ws_clients: list[asyncio.Queue] = []
+# Wake-event pipeline: producer thread → NOTIFICATION_QUEUE → broadcast task → per-client queues
+# Notifications cover both wake events (type=wake) and toast/audit/timer events (type=notification).
+# Legacy WAKE_QUEUE alias kept for any external importers.
+from core.jarvis import notifications as _nfn  # noqa: E402, PLC0415
+_ws_clients: list[asyncio.Queue] = _nfn._WS_CLIENTS  # alias for back-compat
 _stop_clap = threading.Event()
 
 
@@ -100,24 +102,8 @@ def _get_calendar():
 # Wake broadcast helpers
 # ---------------------------------------------------------------------------
 
-async def _broadcast_wake_events() -> None:
-    """Relay items from WAKE_QUEUE to every connected WebSocket client."""
-    while True:
-        try:
-            event = await WAKE_QUEUE.get()
-            for q in list(_ws_clients):
-                try:
-                    await q.put(event)
-                except Exception:
-                    pass
-        except asyncio.CancelledError:
-            break
-        except Exception as exc:
-            log.warning("Wake broadcast error: %s", exc)
-
-
 def _run_clap_detector(loop: asyncio.AbstractEventLoop) -> None:
-    """Background thread: detect double-clap and push to WAKE_QUEUE."""
+    """Background thread: detect double-clap and publish a wake notification."""
     try:
         import sounddevice as sd   # noqa: PLC0415
         from core.wake_system import ClapDetector  # noqa: PLC0415
@@ -127,9 +113,11 @@ def _run_clap_detector(loop: asyncio.AbstractEventLoop) -> None:
         def _cb(indata, frames, time_info, status):
             chunk = indata[:, 0] if indata.ndim > 1 else indata.flatten()
             if detector.process_chunk(chunk):
-                loop.call_soon_threadsafe(
-                    WAKE_QUEUE.put_nowait,
-                    {"type": "wake", "source": "clap", "ts": time.time()},
+                _nfn.publish_threadsafe(
+                    loop,
+                    kind="wake", title="Wake", body="Double-clap detected",
+                    severity="wake", message_type="wake",
+                    meta={"source": "clap"},
                 )
 
         with sd.InputStream(
@@ -156,6 +144,18 @@ def _run_clap_detector(loop: asyncio.AbstractEventLoop) -> None:
 async def lifespan(app: FastAPI):
     log.info("ARIA startup")
 
+    # Initialise the unified notification queue + persistence DB
+    _nfn.init()
+    log.info("NotificationQueue ready (size=%d)", settings.notification_queue_size)
+
+    # Bootstrap Jarvis tool registry — imports every submodule once
+    try:
+        from core.jarvis import bootstrap as _jarvis_bootstrap  # noqa: PLC0415
+        n_tools = _jarvis_bootstrap()
+        log.info("Jarvis registry: %d tools loaded", n_tools)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Jarvis bootstrap failed: %s", exc)
+
     # Pre-warm LLM client (cheap — just creates httpx.Client)
     try:
         _get_llm()
@@ -163,8 +163,8 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         log.warning("LLM pre-warm skipped (Ollama may be offline): %s", exc)
 
-    # Broadcast task
-    broadcast_task = asyncio.create_task(_broadcast_wake_events())
+    # Broadcast task (unified queue → all WS clients)
+    broadcast_task = asyncio.create_task(_nfn.broadcast_loop())
 
     # Clap detector thread
     loop = asyncio.get_event_loop()
@@ -172,6 +172,22 @@ async def lifespan(app: FastAPI):
         target=_run_clap_detector, args=(loop,), daemon=True, name="clap-detector"
     )
     clap_thread.start()
+
+    # Background RSS poller
+    rss_task: asyncio.Task | None = None
+    try:
+        from core.jarvis.knowledge import rss as _rss  # noqa: PLC0415
+        rss_task = asyncio.create_task(_rss.poll_loop())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("RSS poller not started: %s", exc)
+
+    # Clipboard watcher (opt-in via settings.clipboard_enabled)
+    try:
+        from core.jarvis.utilities import clipboard as _clip  # noqa: PLC0415
+        if _clip.start_watcher(loop):
+            log.info("Clipboard watcher: enabled")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Clipboard watcher not started: %s", exc)
 
     # Papers startup notice
     papers_dir = Path(settings.papers_dir)
@@ -183,9 +199,21 @@ async def lifespan(app: FastAPI):
     log.info("ARIA shutdown")
     _stop_clap.set()
     broadcast_task.cancel()
+    if rss_task:
+        rss_task.cancel()
     try:
         await broadcast_task
     except asyncio.CancelledError:
+        pass
+    if rss_task:
+        try:
+            await rss_task
+        except asyncio.CancelledError:
+            pass
+    try:
+        from core.jarvis.utilities import clipboard as _clip  # noqa: PLC0415
+        _clip.stop_watcher()
+    except Exception:
         pass
 
 
@@ -209,6 +237,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------------------------------------------------------------------------
+# Mount Jarvis routers
+# ---------------------------------------------------------------------------
+
+try:
+    from api.routes.tools import router as tools_router        # noqa: PLC0415
+    from api.routes.settings import router as settings_router  # noqa: PLC0415
+    app.include_router(tools_router)
+    app.include_router(settings_router)
+    log.info("Jarvis routers mounted: /tools/* + /settings/*")
+except Exception as exc:  # noqa: BLE001
+    log.warning("Jarvis router mount failed: %s", exc)
 
 
 # ---------------------------------------------------------------------------
@@ -454,8 +495,29 @@ async def voice(file: UploadFile = File(...)) -> dict:
     if not transcript:
         raise HTTPException(status_code=422, detail="Could not transcribe audio — is speech present?")
 
+    # ── Voice tool routing — try intent dispatch before falling through to LLM
+    try:
+        from core.jarvis.voice_router import route as _route  # noqa: PLC0415
+        routed = await _route(transcript)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Voice routing skipped: %s", exc)
+        routed = None
+
+    if routed and routed.get("matched"):
+        return {
+            "response":  routed["response"],
+            "transcript": transcript,
+            "intent":    routed["intent"],
+            "audit_envelope": None,
+            "sources":   [],
+            "latency_ms": 0,
+            "routed":    True,
+        }
+
+    # Fall through to standard LLM chat
     result = query(QueryRequest(prompt=transcript))
     result["transcript"] = transcript
+    result["routed"] = False
     return result
 
 
@@ -656,11 +718,17 @@ def google_oauth_instructions() -> dict:
 
 @app.websocket("/ws/wake")
 async def wake_ws(websocket: WebSocket):
-    """Push wake events (double-clap / hotword) to frontend."""
+    """Unified push channel: wake events + toast notifications.
+
+    Frontend WS handler switches on `event.type`:
+      - "wake"          → trigger voice orb
+      - "notification"  → render toast + bump bell badge
+      - "ping"          → keep-alive only
+    """
     await websocket.accept()
     q: asyncio.Queue = asyncio.Queue()
-    _ws_clients.append(q)
-    log.info("Wake WS: client connected (%d total)", len(_ws_clients))
+    _nfn.register_client(q)
+    log.info("WS client connected (%d total)", _nfn.client_count())
     try:
         while True:
             try:
@@ -671,9 +739,8 @@ async def wake_ws(websocket: WebSocket):
     except (WebSocketDisconnect, Exception):
         pass
     finally:
-        if q in _ws_clients:
-            _ws_clients.remove(q)
-        log.info("Wake WS: client disconnected (%d remaining)", len(_ws_clients))
+        _nfn.unregister_client(q)
+        log.info("WS client disconnected (%d remaining)", _nfn.client_count())
 
 
 # ------------------------------------------------------------------
