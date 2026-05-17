@@ -1,0 +1,47 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local artifacts
+*.sqlite
+*.db
+qdrant_storage/
+
+# Models (never commit weights)
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+models/
+
+# RAG indices (rebuild from papers/)
+rag/index/
+
+# OAuth secrets
+integrations/credentials.json
+integrations/token.pickle
+integrations/token.json
+
+# Research papers (large; not for redistribution)
+rag/papers/*.pdf
+
+# Audio caches
+*.wav
+*.mp3
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+
+# Claude
+.claude/
