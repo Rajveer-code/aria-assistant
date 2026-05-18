@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from core.jarvis import notifications as nfn
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ def _sync_create_wrapper(label: str = "timer", seconds: int = 60) -> dict:
     return {"ok": True, "label": label, "seconds": seconds}
 
 
-register(JarvisTool(
+register(ARIATool(
     name="timer",
     category="utilities",
     description=("Start a countdown timer. Args: label (string), seconds (int 1..86400). "

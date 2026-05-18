@@ -64,7 +64,7 @@ Every single response is scored on five axes **before it reaches you.** If equit
 | **09 · Power** | App launcher · screenshot+LLaVA · GitHub · Obsidian RAG · flashcards (SM-2) |
 | **10 · Settings** | Effective config + persisted overrides · per-key edit · restart hints |
 
-## Jarvis tool layer
+## ARIA tool layer
 
 ARIA is voice-driven and tool-routed. Every feature below is both a clickable card and a voice phrase:
 
@@ -73,7 +73,7 @@ ARIA is voice-driven and tool-routed. Every feature below is both a clickable ca
 | *"ARIA, weather in Pune"* | `weather` | wttr.in, no API key |
 | *"ARIA, system stats"* | `system_stats` | psutil + pynvml live |
 | *"ARIA, set a 25 minute pomodoro"* | `timer` | toast + native notification on expiry |
-| *"ARIA, summarize my clipboard"* | `clipboard_summarize` | opt-in via Settings → Jarvis |
+| *"ARIA, summarize my clipboard"* | `clipboard_summarize` | opt-in via Settings → ARIA |
 | *"ARIA, remember my favourite city is Pune"* | `memory.patch` | JSON sidecar, persists across restart |
 | *"ARIA, search the web for X"* | `web_search` | DuckDuckGo HTML scrape |
 | *"ARIA, find papers on X"* | `arxiv_search` | Free Atom API |
@@ -191,7 +191,7 @@ Or upload directly from the Papers page in the dashboard.
 │  /voice         WAV upload → transcribe + query                     │
 │  /rag/*         papers list + PDF upload + ingest                   │
 │  /integrations/* Gmail + Calendar (503 if unconfigured)             │
-│  /tools/*       16 Jarvis tools across Utilities/Knowledge/Power    │
+│  /tools/*       16 ARIA tools across Utilities/Knowledge/Power    │
 │  /ws/wake       WebSocket push (wake events + notifications)        │
 └─────┬──────────┬──────────┬──────────┬──────────┬───────────────────┘
       │          │          │          │          │

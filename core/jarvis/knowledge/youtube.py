@@ -11,7 +11,7 @@ import logging
 import re
 from typing import Any
 
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ async def summarize(url: str, max_chars: int = 4000) -> dict[str, Any]:
     }
 
 
-register(JarvisTool(
+register(ARIATool(
     name="youtube_summarize",
     category="knowledge",
     description="Fetch a YouTube transcript and summarize it with the primary LLM.",

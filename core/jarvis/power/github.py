@@ -9,7 +9,7 @@ import subprocess
 from typing import Any
 
 from config.settings import settings
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ def run_action(action: str, repo: str, args: dict | None = None) -> dict[str, An
     return {"ok": True, "action": action, "repo": repo, "data": data}
 
 
-register(JarvisTool(
+register(ARIATool(
     name="github",
     category="power",
     description=("Run read-only GitHub queries via the `gh` CLI on allowlisted repos. "

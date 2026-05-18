@@ -148,13 +148,13 @@ async def lifespan(app: FastAPI):
     _nfn.init()
     log.info("NotificationQueue ready (size=%d)", settings.notification_queue_size)
 
-    # Bootstrap Jarvis tool registry — imports every submodule once
+    # Bootstrap ARIA tool registry — imports every submodule once
     try:
-        from core.jarvis import bootstrap as _jarvis_bootstrap  # noqa: PLC0415
-        n_tools = _jarvis_bootstrap()
-        log.info("Jarvis registry: %d tools loaded", n_tools)
+        from core.jarvis import bootstrap as _aria_bootstrap  # noqa: PLC0415
+        n_tools = _aria_bootstrap()
+        log.info("ARIA tool registry: %d tools loaded", n_tools)
     except Exception as exc:  # noqa: BLE001
-        log.warning("Jarvis bootstrap failed: %s", exc)
+        log.warning("ARIA tool bootstrap failed: %s", exc)
 
     # Pre-warm LLM client (cheap — just creates httpx.Client)
     try:
@@ -239,7 +239,7 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Mount Jarvis routers
+# Mount ARIA routers
 # ---------------------------------------------------------------------------
 
 try:
@@ -247,9 +247,9 @@ try:
     from api.routes.settings import router as settings_router  # noqa: PLC0415
     app.include_router(tools_router)
     app.include_router(settings_router)
-    log.info("Jarvis routers mounted: /tools/* + /settings/*")
+    log.info("ARIA routers mounted: /tools/* + /settings/*")
 except Exception as exc:  # noqa: BLE001
-    log.warning("Jarvis router mount failed: %s", exc)
+    log.warning("ARIA router mount failed: %s", exc)
 
 
 # ---------------------------------------------------------------------------

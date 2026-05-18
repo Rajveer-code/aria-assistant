@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from './Icons.jsx';
-import { getSettings, patchSetting, resetSetting, resetAllSettings } from '../jarvis_api.js';
+import { getSettings, patchSetting, resetSetting, resetAllSettings } from '../aria_api.js';
 
 // Group settings into logical sections for the UI.
 const GROUPS = [
@@ -8,7 +8,7 @@ const GROUPS = [
   { name: 'Voice',      keys: ['whisper_model', 'whisper_device', 'piper_voice', 'wake_phrase', 'wake_gesture_required'] },
   { name: 'RAG',        keys: ['qdrant_path', 'qdrant_collection_text', 'qdrant_collection_visual', 'rag_chunk_size', 'rag_chunk_overlap', 'rag_top_k_retrieve', 'rag_top_k_final', 'rag_rrf_k', 'rag_embed_batch_size'] },
   { name: 'Audit',      keys: ['audit_db_path', 'audit_drift_lambda', 'audit_drift_delta'] },
-  { name: 'Jarvis',     keys: ['default_city', 'weather_units', 'clipboard_enabled', 'clipboard_poll_ms', 'clipboard_history_max', 'rss_poll_interval_s', 'notification_queue_size'] },
+  { name: 'ARIA',     keys: ['default_city', 'weather_units', 'clipboard_enabled', 'clipboard_poll_ms', 'clipboard_history_max', 'rss_poll_interval_s', 'notification_queue_size'] },
   { name: 'Paths',      keys: ['papers_dir', 'memory_path', 'overrides_path', 'rss_feeds_path', 'flashcards_db', 'notifications_db'] },
   { name: 'GitHub',     keys: ['github_repo_allowlist', 'obsidian_vaults'] },
   { name: 'API',        keys: ['api_host', 'api_port'] },

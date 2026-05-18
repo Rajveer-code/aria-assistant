@@ -120,7 +120,7 @@ class Settings:
     api_host: str = _env("ARIA_API_HOST", "127.0.0.1")
     api_port: int = _env_int("ARIA_API_PORT", 8000)
 
-    # ---- Jarvis features ----
+    # ---- ARIA features ----
     default_city: str           = _env("ARIA_DEFAULT_CITY", "Jabalpur")
     weather_units: str          = _env("ARIA_WEATHER_UNITS", "metric")
     clipboard_enabled: bool     = _env("ARIA_CLIPBOARD_ENABLED", "false").lower() == "true"

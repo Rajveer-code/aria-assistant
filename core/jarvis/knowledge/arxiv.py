@@ -8,7 +8,7 @@ from urllib.parse import quote_plus
 
 import httpx
 
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ async def search(q: str, max_results: int = 10) -> dict[str, Any]:
     return {"ok": True, "query": q, "results": out, "count": len(out), "source": "arxiv"}
 
 
-register(JarvisTool(
+register(ARIATool(
     name="arxiv_search",
     category="knowledge",
     description="Search arXiv for academic papers. Returns titles, authors, abstracts.",

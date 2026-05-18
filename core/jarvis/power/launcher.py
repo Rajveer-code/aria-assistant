@@ -14,7 +14,7 @@ import webbrowser
 from pathlib import Path
 from typing import Any
 
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ def open_target(target: str, kind: str = "app") -> dict[str, Any]:
         return {"ok": False, "error": str(exc), "cmd": cmd}
 
 
-register(JarvisTool(
+register(ARIATool(
     name="open_app",
     category="power",
     description=("Open an application, file, or URL on the user's desktop. "

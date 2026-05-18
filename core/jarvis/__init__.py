@@ -1,6 +1,6 @@
 """Jarvis-style tool layer for ARIA Assistant.
 
-Every Tier-1/2/3 feature is a `JarvisTool` registered with the central
+Every Tier-1/2/3 feature is a `ARIATool` registered with the central
 `REGISTRY`. Each tool has:
   - a unique name
   - a smolagents-compatible description (used for voice routing)

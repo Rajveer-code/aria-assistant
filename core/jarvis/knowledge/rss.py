@@ -18,7 +18,7 @@ import httpx
 
 from config.settings import settings
 from core.jarvis import notifications as nfn
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -177,7 +177,7 @@ async def poll_loop() -> None:
             return
 
 
-register(JarvisTool(
+register(ARIATool(
     name="rss_items",
     category="knowledge",
     description="Fetch latest items from configured RSS feeds.",

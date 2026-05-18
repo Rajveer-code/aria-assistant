@@ -1,9 +1,9 @@
-"""All Jarvis tool endpoints under /tools/*.
+"""All ARIA tool endpoints under /tools/*.
 
 Routes here are thin — they validate, dispatch into `core.jarvis.<feature>`,
 and (if the tool produces LLM output) wrap the result in `_audit()`.
 
-Tools are populated by `core.jarvis.bootstrap()` at app startup. Each handler
+Tools are populated by `core.aria.bootstrap()` at app startup. Each handler
 imports its heavy deps lazily (defer-import pattern).
 """
 

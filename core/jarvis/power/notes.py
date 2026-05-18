@@ -16,7 +16,7 @@ from typing import Any
 
 from config.settings import settings
 from core.jarvis import memory
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -134,7 +134,7 @@ async def index_vault(vault_path: str) -> dict[str, Any]:
     }
 
 
-register(JarvisTool(
+register(ARIATool(
     name="index_vault",
     category="power",
     description="Index a directory of Markdown notes (Obsidian-style vault) into the RAG store.",

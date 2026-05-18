@@ -14,7 +14,7 @@ from typing import Any
 import httpx
 
 from config.settings import settings
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ async def capture_and_query(region: list[int] | None = None,
     }
 
 
-register(JarvisTool(
+register(ARIATool(
     name="screenshot_vision",
     category="power",
     description=("Take a screenshot of the user's screen and ask LLaVA about it. "

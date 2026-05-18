@@ -1,6 +1,6 @@
 """Central tool registry shared by REST API and voice routing.
 
-Every Jarvis tool registers itself at module-import time via `register()`.
+Every ARIA tool registers itself at module-import time via `register()`.
 The same `REGISTRY` is consumed by:
   - `api/routes/tools.py` for REST dispatch (`dispatch(name, **kwargs)`)
   - voice routing (smolagents) — see `to_smolagents_descriptions()`
@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 
 @dataclass
-class JarvisTool:
+class ARIATool:
     name: str
     """Unique tool identifier (snake_case)."""
 
@@ -43,22 +43,22 @@ class JarvisTool:
     """Example phrases shown in the UI ("Say: ARIA, weather in Pune")."""
 
 
-REGISTRY: dict[str, JarvisTool] = {}
+REGISTRY: dict[str, ARIATool] = {}
 
 
-def register(tool: JarvisTool) -> JarvisTool:
+def register(tool: ARIATool) -> ARIATool:
     """Register a tool. Last-write-wins on duplicate name."""
     if tool.name in REGISTRY:
-        log.debug("Jarvis tool %r already registered — overwriting", tool.name)
+        log.debug("ARIA tool %r already registered — overwriting", tool.name)
     REGISTRY[tool.name] = tool
     return tool
 
 
-def get(name: str) -> JarvisTool | None:
+def get(name: str) -> ARIATool | None:
     return REGISTRY.get(name)
 
 
-def list_tools(category: str | None = None) -> list[JarvisTool]:
+def list_tools(category: str | None = None) -> list[ARIATool]:
     if category is None:
         return list(REGISTRY.values())
     return [t for t in REGISTRY.values() if t.category == category]
@@ -68,7 +68,7 @@ def dispatch(name: str, **kwargs) -> Any:
     """Synchronous dispatch. Async handlers should be awaited by the caller."""
     tool = REGISTRY.get(name)
     if tool is None:
-        raise KeyError(f"Unknown Jarvis tool: {name!r}")
+        raise KeyError(f"Unknown ARIA tool: {name!r}")
     return tool.handler(**kwargs)
 
 

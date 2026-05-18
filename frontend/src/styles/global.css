@@ -600,7 +600,7 @@ body {
 .page-audit { display: flex; flex-direction: column; gap: 16px; }
 
 /* ============================================================
-   Jarvis hub pages (Utilities · Knowledge · Power · Settings)
+   ARIA hub pages (Utilities · Knowledge · Power · Settings)
    ============================================================ */
 .page-hub { display: flex; flex-direction: column; gap: 16px; padding: 0; }
 .hub-grid {

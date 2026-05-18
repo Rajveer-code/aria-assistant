@@ -4,7 +4,7 @@ import {
   searchWeb, searchArxiv, searchWikipedia, summarizeYouTube,
   listRssFeeds, addRssFeed, deleteRssFeed, listRssItems,
   runCode,
-} from '../jarvis_api.js';
+} from '../aria_api.js';
 
 function HubCard({ icon, title, voice, status, children, footer }) {
   return (

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from config.settings import settings
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -189,7 +189,7 @@ def review(card_id: int, quality: int) -> dict[str, Any]:
     }
 
 
-register(JarvisTool(
+register(ARIATool(
     name="study_generate",
     category="power",
     description=("Generate flashcards from a paper, free text, or topic. "

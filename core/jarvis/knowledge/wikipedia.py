@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 import httpx
 
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def _shape(d: dict) -> dict[str, Any]:
     }
 
 
-register(JarvisTool(
+register(ARIATool(
     name="wikipedia",
     category="knowledge",
     description="Look up a topic on Wikipedia. Returns title, short description, and extract.",

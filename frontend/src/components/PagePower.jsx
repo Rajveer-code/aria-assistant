@@ -4,7 +4,7 @@ import {
   openLauncher, captureScreenshot, githubList, githubAction,
   listNotes, indexNotes,
   generateFlashcards, dueCards, reviewCard,
-} from '../jarvis_api.js';
+} from '../aria_api.js';
 
 function HubCard({ icon, title, voice, status, children }) {
   return (

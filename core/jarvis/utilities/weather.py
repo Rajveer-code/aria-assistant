@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 
 from config.settings import settings
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ async def fetch(city: str) -> dict[str, Any]:
 
 
 # Register tool
-register(JarvisTool(
+register(ARIATool(
     name="weather",
     category="utilities",
     description=("Get current weather and 3-day forecast for a city. "

@@ -7,7 +7,7 @@ import shutil
 import time
 from typing import Any
 
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ def snapshot() -> dict[str, Any]:
     }
 
 
-register(JarvisTool(
+register(ARIATool(
     name="system_stats",
     category="utilities",
     description="Return current CPU / RAM / GPU / disk usage as JSON.",

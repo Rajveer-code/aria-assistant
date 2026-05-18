@@ -5,7 +5,7 @@ import {
   createTimer, listTimers, cancelTimer,
   getClipboardHistory, summarizeClipboard,
   getMemory, patchMemory,
-} from '../jarvis_api.js';
+} from '../aria_api.js';
 
 // ────────── Generic card shell ──────────
 function HubCard({ icon, title, voice, status, children, footer }) {
@@ -214,7 +214,7 @@ function ClipboardCard() {
                       : <span className="pill"><span className="dot" />OFF</span>}>
       {!enabled && (
         <div className="t-dim" style={{ fontSize: 11, marginBottom: 8 }}>
-          Enable in Settings → Jarvis → Clipboard watcher (off by default for privacy).
+          Enable in Settings → ARIA → Clipboard watcher (off by default for privacy).
         </div>
       )}
       {items.length === 0 ? <div className="t-dim">No clipboard items yet.</div> : (

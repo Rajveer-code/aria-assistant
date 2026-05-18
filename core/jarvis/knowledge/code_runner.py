@@ -18,7 +18,7 @@ import sys
 import textwrap
 from typing import Any
 
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def run(code: str, timeout_s: int = 8) -> dict[str, Any]:
     }
 
 
-register(JarvisTool(
+register(ARIATool(
     name="run_code",
     category="knowledge",
     description=("Execute a Python snippet in an isolated subprocess. Captures stdout/stderr. "

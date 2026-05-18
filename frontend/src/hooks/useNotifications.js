@@ -1,6 +1,6 @@
 import React from 'react';
 import { WS_BASE } from '../api.js';
-import { getRecentNotifications } from '../jarvis_api.js';
+import { getRecentNotifications } from '../aria_api.js';
 
 /**
  * Listens on the same /ws/wake socket as voice. Filters out wake messages

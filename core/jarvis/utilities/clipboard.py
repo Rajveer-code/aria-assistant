@@ -18,7 +18,7 @@ from typing import Any, Deque
 
 from config.settings import settings
 from core.jarvis import notifications as nfn
-from core.jarvis.registry import JarvisTool, register
+from core.jarvis.registry import ARIATool, register
 
 log = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ async def summarize(text: str) -> dict[str, Any]:
         return {"ok": False, "error": str(exc)}
 
 
-register(JarvisTool(
+register(ARIATool(
     name="clipboard_summarize",
     category="utilities",
     description="Summarize the most recently copied clipboard item using the primary LLM.",
