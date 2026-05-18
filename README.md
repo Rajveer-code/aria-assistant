@@ -181,21 +181,22 @@ Or upload directly from the Papers page in the dashboard.
 ## Architecture
 
 ```
-┌──────── Browser (React + Vite) ─────────────────────────────┐
-│  AuditEngine  ·  PageChat  ·  PageEmail  ·  PageCalendar    │
-│  PageEval     ·  PagePapers                                  │
-└──────────────────────┬──────────────────────────────────────┘
+┌──────── Browser (React + Vite) ─────────────────────────────────────┐
+│  01·Audit  02·Chat  03·Inbox  04·Calendar  05·Eval  06·Papers       │
+│  07·Daily  08·Knowledge  09·Power  10·Settings                      │
+└──────────────────────┬──────────────────────────────────────────────┘
                        │ REST + SSE + WebSocket
-┌──────── FastAPI (api/main.py) ──────────────────────────────┐
-│  /query/stream  SSE token stream + audit envelope           │
-│  /voice         WAV upload → transcribe + query             │
-│  /rag/*         papers list + PDF upload + ingest           │
-│  /integrations/* Gmail + Calendar (503 if unconfigured)     │
-│  /ws/wake       WebSocket push for wake-word events         │
-└─────┬──────────┬──────────┬──────────┬──────────────────────┘
-      │          │          │          │
-   Ollama    aria_audit   Qdrant   Google APIs
-  (Qwen3)   (5-axis)    (RAG DB)  (Gmail/Cal)
+┌──────── FastAPI (api/main.py + api/routes/tools.py) ────────────────┐
+│  /query/stream  SSE token stream + audit envelope                   │
+│  /voice         WAV upload → transcribe + query                     │
+│  /rag/*         papers list + PDF upload + ingest                   │
+│  /integrations/* Gmail + Calendar (503 if unconfigured)             │
+│  /tools/*       16 Jarvis tools across Utilities/Knowledge/Power    │
+│  /ws/wake       WebSocket push (wake events + notifications)        │
+└─────┬──────────┬──────────┬──────────┬──────────┬───────────────────┘
+      │          │          │          │          │
+   Ollama    aria_audit   Qdrant   Google APIs  core/jarvis
+  (Qwen3)   (5-axis)    (RAG DB)  (Gmail/Cal)  (tool registry)
 ```
 
 ---

@@ -120,7 +120,11 @@ def _make_tools(retriever: Any, calendar: Any, gmail: Any, db_path: str) -> list
                 return f"No events found for {date}."
             lines = [f"Events for {date}:"]
             for ev in events:
-                lines.append(f"  - {ev}")
+                lines.append(
+                    f"  - {ev.get('summary', '(no title)')} "
+                    f"@ {ev.get('start', '')} – {ev.get('end', '')}"
+                    + (f" [{ev.get('location')}]" if ev.get('location') else "")
+                )
             return "\n".join(lines)
         except Exception:
             logger.exception("get_calendar_events() failed for date=%r", date)
@@ -139,12 +143,15 @@ def _make_tools(retriever: Any, calendar: Any, gmail: Any, db_path: str) -> list
         if gmail is None:
             return "Gmail integration not available."
         try:
-            threads = gmail.get_recent_threads(n)
+            threads = gmail.list_threads(max_results=n)
             if not threads:
                 return "No recent email threads found."
             lines = [f"Last {n} email threads:"]
             for i, t in enumerate(threads, 1):
-                lines.append(f"  {i}. {t}")
+                lines.append(
+                    f"  {i}. {t.get('subject', '(no subject)')} "
+                    f"— from {t.get('from_address', '')} ({t.get('date', '')})"
+                )
             return "\n".join(lines)
         except Exception:
             logger.exception("get_recent_emails() failed (n=%d)", n)

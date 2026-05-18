@@ -74,7 +74,9 @@ def snapshot() -> dict[str, Any]:
     cpu_count = psutil.cpu_count(logical=True) or 1
 
     try:
-        disk_total, disk_used, disk_free = shutil.disk_usage("/")
+        import os as _os  # noqa: PLC0415
+        _disk_path = _os.path.splitdrive(_os.getcwd())[0] or "/"
+        disk_total, disk_used, disk_free = shutil.disk_usage(_disk_path)
         disk = {
             "total_gb": round(disk_total / 1024**3, 1),
             "used_gb":  round(disk_used  / 1024**3, 1),

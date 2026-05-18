@@ -103,6 +103,8 @@ async def generate(source_kind: str, source_id: str, n_cards: int = 10) -> dict[
                 "raw": raw[:500], "audit_envelope": envelope}
 
     now = time.time()
+    # SM-2 initial interval: first review due after 1 day (not immediately)
+    first_due = now + 86_400
     inserted_ids: list[int] = []
     with _db() as conn:
         for c in cards[:int(n_cards)]:
@@ -113,7 +115,7 @@ async def generate(source_kind: str, source_id: str, n_cards: int = 10) -> dict[
             cur = conn.execute(
                 "INSERT INTO cards(source_kind,source_id,question,answer,due_ts,created_ts,audit_json) "
                 "VALUES (?,?,?,?,?,?,?)",
-                (source_kind, source_id, q, a, now, now, json.dumps(envelope or {})),
+                (source_kind, source_id, q, a, first_due, now, json.dumps(envelope or {})),
             )
             inserted_ids.append(cur.lastrowid)
         conn.commit()

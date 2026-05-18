@@ -45,21 +45,68 @@ async def index_vault(vault_path: str) -> dict[str, Any]:
         return {"ok": False, "error": "No .md files found in vault."}
 
     try:
-        from rag.ingest import ingest_pdf  # noqa: PLC0415
+        from rag.ingest import embed_chunks_bge_m3  # noqa: PLC0415
+        from rag.qdrant_store import ensure_collections, get_client, upsert_chunk  # noqa: PLC0415
     except Exception as exc:  # noqa: BLE001
-        return {"ok": False, "error": f"rag.ingest unavailable: {exc}"}
+        return {"ok": False, "error": f"rag stack unavailable: {exc}"}
 
     slug = _slug(str(p))
     total_chunks = 0
     failed: list[str] = []
+
+    # Ingest each .md file as plain text — split into overlapping chunks
+    chunk_size = 1024
+    overlap = 128
+
+    client = get_client()
+    ensure_collections(client)
+
     for md in md_files:
         try:
-            # ingest_pdf supports any text-y file in practice; if it strictly checks
-            # extension we still want to be honest with a wrapper. Fall through to
-            # the simple approach for now.
-            n = ingest_pdf(str(md))
-            if n > 0:
-                total_chunks += n
+            text = md.read_text(encoding="utf-8", errors="replace")
+            if not text.strip():
+                continue
+
+            # Build overlapping character chunks
+            chunks: list[dict] = []
+            stem = md.stem
+            i = 0
+            idx = 0
+            while i < len(text):
+                end = min(i + chunk_size, len(text))
+                chunk_text = text[i:end].strip()
+                if chunk_text:
+                    chunks.append({
+                        "chunk_id": f"notes_{slug}_{stem}_{idx:04d}",
+                        "text": chunk_text,
+                        "source": md.name,
+                        "page": 0,
+                        "char_start": i,
+                    })
+                    idx += 1
+                i += chunk_size - overlap
+
+            if not chunks:
+                continue
+
+            texts = [c["text"] for c in chunks]
+            dense_vectors, sparse_dicts = embed_chunks_bge_m3(texts)
+
+            for chunk, dvec, svec in zip(chunks, dense_vectors, sparse_dicts):
+                upsert_chunk(
+                    client=client,
+                    chunk_id=chunk["chunk_id"],
+                    dense_vector=dvec.tolist(),
+                    sparse_vector=svec,
+                    payload={
+                        "text": chunk["text"],
+                        "source": chunk["source"],
+                        "page": chunk["page"],
+                        "char_start": chunk["char_start"],
+                    },
+                )
+                total_chunks += 1
+
         except Exception as exc:  # noqa: BLE001
             failed.append(f"{md.name}: {exc}")
 

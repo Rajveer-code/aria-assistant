@@ -181,13 +181,9 @@ class VoiceEngine:
             os.close(fd)
 
         try:
-            cmd = (
-                f'echo {text} | piper --model {self.piper_voice} '
-                f'--output_file "{out_path}"'
-            )
             result = subprocess.run(
-                cmd,
-                shell=True,
+                ["piper", "--model", self.piper_voice, "--output_file", out_path],
+                input=text,
                 capture_output=True,
                 text=True,
             )
@@ -217,22 +213,32 @@ class VoiceEngine:
 
     def _speak_unix(self, text: str) -> None:
         """Linux/macOS path: pipe raw PCM through aplay / afplay."""
-        player = "afplay -" if platform.system() == "Darwin" else "aplay -r 22050 -f S16_LE -c 1"
-        cmd = (
-            f'echo "{text}" | piper --model {self.piper_voice} '
-            f"--output_raw | {player}"
+        is_mac = platform.system() == "Darwin"
+        player_cmd = (
+            ["afplay", "-"]
+            if is_mac
+            else ["aplay", "-r", "22050", "-f", "S16_LE", "-c", "1"]
         )
         try:
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                capture_output=True,
-                text=True,
+            piper_result = subprocess.run(
+                ["piper", "--model", self.piper_voice, "--output_raw"],
+                input=text.encode(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
-            if result.returncode != 0:
+            if piper_result.returncode != 0:
                 logger.error(
-                    "Piper TTS failed (rc=%d): %s", result.returncode, result.stderr
+                    "Piper TTS failed (rc=%d): %s",
+                    piper_result.returncode,
+                    piper_result.stderr.decode(errors="replace"),
                 )
+                return
+            subprocess.run(
+                player_cmd,
+                input=piper_result.stdout,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         except FileNotFoundError:
             logger.error(
                 "piper or audio player not found.  "

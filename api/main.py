@@ -535,8 +535,13 @@ async def tts(req: TTSRequest):
     fd, out = tempfile.mkstemp(suffix=".wav")
     os.close(fd)
     try:
-        cmd = f'echo {safe} | piper --model {settings.piper_voice} --output_file "{out}"'
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
+        r = subprocess.run(
+            ["piper", "--model", settings.piper_voice, "--output_file", out],
+            input=safe,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
         if r.returncode != 0:
             raise HTTPException(
                 status_code=503,
